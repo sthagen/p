@@ -196,29 +196,26 @@ def parse_gli(payload):
     Longitude of glideslope aerial in decimal degrees - Eight decimal places supported
     Elevation in feet above MSL - Integer
     Frequency in MHZ (multiplied by 100) - Integer - MHz multiplied by 100 (eg. 123.45MHz = 12345)
-    Maximum reception range in nautical miles - Integer
-    Associated localiser bearing in true degrees prefixed by glideslope angle - Up to three decimal places supported.
-        Glideslope angle multiplied by 100,000 and added (eg. Glideslope of 3.25 degrees on heading of 123.456 becomes 325123.456)
-    Glideslope identifier - Up to four characters. Usually start with "I". Not unique
+    Maximum reception range in nautical miles - Integer - Terminal range is 25nm by default
+    Associated localizer bearing in true degrees prefixed by glideslope angle - Up to three decimal places supported. Glideslope angle multiplied by 100,000 and added (e.g. Glideslope of 3.25 degrees on heading of 123.456 becomes 325123.456)
+    Glideslope identifier - Up to four characters. Usually start with "I". Unique within airport terminal area
     Airport ICAO code - Up to four characters. Must be valid airport code
+    Airport ICAO region code - Must be region code according to ICAO document No. 7910
     Associated runway number - Up to three characters
     Name - "GS"
 
     Examples:
     ,,,,,,,,,
-    6  39.97729400 -075.86027500    655 10850  10  300281.662 IMQS 40N  29  GS
-    6 -09.43270300  147.21644400    128 11010  10  302148.638 IWG  AYPY 14L GS
-    6 -09.44922200  147.22658900    103 10950  10  300328.625 IBB  AYPY 32R GS
-    6  76.53109741 -068.75268555    251 10950  10  300085.060 IITL BGTL 08T GS
-    6  65.64850000 -018.06780556     44 11190  10  500358.140 IEY  BIAR 01  GS
-    6  65.27911111 -014.40944444    123 10930  10  300025.260 IES  BIEG 04  GS
-    6  63.96708333 -022.60344444    180 11130  10  300000.020 IKN  BIKF 02  GS
-    6  63.98641667 -022.64833333    150 10950  10  300089.970 IKF  BIKF 11  GS
-    6  63.98913889 -022.60233333    199 11030  10  300180.020 IKO  BIKF 20  GS
-    6  63.98613889 -022.59905556    214 10850  10  300270.020 IKW  BIKF 29  GS
-    6  65.74222222 -019.57750000     16 10970  10  300351.000 IKR  BIKR 01  GS
-    6  64.13363889 -021.94091667     48 10990  10  350175.260 IRK  BIRK 19  GS
-    6  42.58277800  021.03630600   1794 11010  10  300175.689 PRS  BKPR 17  GS
+     6  36.710150000    3.249166667      131    11030    18 300232.655   AG DAAG DA 23 GS
+     6  36.690944444    3.174277778       66    10850    18 300091.684   HB DAAG DA 09 GS
+     6  22.823888889    5.455277778     4518    10850    18 328201.894   TM DAAT DA 20 GS
+     6  36.842438889    7.811202778       59    10970    18 300186.872   AN DABB DA 19 GS
+     6  36.264838889    6.620272222     2316    10830    18 315339.306   CS DABC DA 34 GS
+     6  36.272086111    6.631463889     2359    10930    18 300316.228   CT DABC DA 32 GS
+     6  35.624527778   -0.614444444      295    10990    18 300247.197   OR DAOO DA 25L GS
+     6  31.656047222   -2.260013889     2661    10810    18 300179.985   BC DAOR DA 18 GS
+     6  34.785833333    5.746944444      246    11090    18 300310.030   BI DAUB DA 31 GS
+     6  32.369391667    3.819586111     1512    10950    18 300302.330   GH DAUG DA 30 GS
 
     """
     row_code = 6
@@ -236,10 +233,11 @@ def parse_gli(payload):
     bearing_true_degrees = float(bearing_true_degrees)
     local_id, rest = rest.lstrip().split(" ", 1)
     airport_icao, rest = rest.lstrip().split(" ", 1)
+    icao_region_code, rest = rest.lstrip().split(" ", 1)
     runway_no, rest = rest.lstrip().split(" ", 1)
     name = rest.strip()
 
-    return "GLI", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, max_range_nautical_miles, bearing_true_degrees, local_id, airport_icao, runway_no, name
+    return "GLI", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, max_range_nautical_miles, bearing_true_degrees, local_id, airport_icao, icao_region_code, runway_no, name
 
 
 def parse_mrk(payload, row_code):
@@ -380,7 +378,7 @@ def parse(row):
         3: parse_vor,
         4: partial(parse_loc, row_code=4),
         5: partial(parse_loc, row_code=5),
-        6: parse_vor,
+        6: parse_gli,
         7: partial(parse_mrk, row_code=7),
         8: partial(parse_mrk, row_code=8),
         9: partial(parse_mrk, row_code=9),
