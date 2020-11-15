@@ -18,10 +18,28 @@ class NDB(IntEnum):
     NORMAL = 50,
     HIGH_POWER = 75,
 
+class VOR(IntEnum):
+    """VOR class (formerly reception range in nautical miles)
+    Note:
+        125 = unspecified but likely high power VOR. Uses the higher of 5.35 class and 5.149 figure of merit.
+    """
+    TERMINAL = 25,
+    LOW_ALTITUDE = 40,
+    HIGH_ALTITUDE = 130,
+    UNSPECIFIED = 125,
+
 
 def ndb_code(number):
-    """Look up an enum."""
+    """Look up an NDB enum."""
     for member in NDB:
+        if member == number:
+            return member
+    return None
+
+
+def vor_code(number):
+    """Look up a VOR enum."""
+    for member in VOR:
         if member == number:
             return member
     return None
@@ -80,29 +98,19 @@ def parse_vor(payload):
     Longitude of VOR in decimal degrees - Eight decimal places supported 
     Elevation in feet above MSL - Integer. Used to calculate service volumes.
     Frequency in MHZ (multiplied by 100) - Integer - MHz multiplied by 100 (eg. 123.45MHz = 12345)
-    Maximum reception range in nautical miles - Integer
-    Slaved variation for VOR - Up to three decimal places supported
-    VOR identifier - Up to four characters. Not unique 
+    VOR class (formerly reception range in nautical miles) - 25 = terminal, 40 = low altitude, 130 = high altitude, 125 = unspecified but likely high power VOR. Uses the higher of 5.35 class and 5.149 figure of merit.
+    Slaved variation for VOR, i.e. direction of the 0 radial measured in true degrees - Up to three decimal places supported
+    VOR identifier - Up to four characters. Not unique
+    ENRT for all VORs - Always ENRT
+    ICAO region code - Must be region code according to ICAO document No. 7910
     VOR name - Text, suffix with "VOR", "VORTAC" or "VOR-DME"
 
     Examples:
     ,,,,,,,,,
-    3  57.10371900  009.99557800     57 11670 100    1.0 AAL  AALBORG VOR-DME
-    3  30.38702800  048.21761100     10 11450 130    3.0 ABD  ABADAN VOR-DME
-    3  53.74500000  091.38500000    827 11330 130    4.0 ABK  ABAKAN VOR-DME
-    3  50.13513900  001.85469400    223 10845  60   -3.0 ABB  ABBEVILLE VOR-DME
-    3  13.84511100  020.84500000   1804 11450 130    0.0 AE   ABECHE VOR
-    3  57.31055600 -002.26722200    600 11430 200   -5.0 ADN  ABERDEEN VOR-DME
-    3  45.41736111 -098.36872222   1301 11300 130    7.0 ABR  ABERDEEN VOR-DME
-    3  18.24191700  042.65694400   6862 11290 130    1.0 ABH  ABHA VORTAC
-    3  05.27719400 -003.91930600     30 11430 130   -7.0 AD   ABIDJAN VOR-DME
-    3  32.48133333 -099.86344444   1810 11370 130   10.0 ABI  ABILENE VORTAC
-    3  32.46277800  013.16944400    470 11510 130    0.0 ABU  ABU ARGUB VOR-DME
-    3  24.44319400  054.64647200     68 11300 100    0.0 AUH  ABU DHABI VOR-DME
-    3  22.35488900  031.62200000    640 11350 200    2.0 SML  ABU SIMBEL VOR-DME
-    3  09.03779700  007.28509700   1240 11630  40   -2.0 ABC  ABUJA VOR-DME
-    3  16.75847222 -099.75397222     16 11590 130    8.0 ACA  ACAPULCO VOR-DME
-    3  09.55208333 -069.23791667    758 11340 130  -10.0 AGV  ACARIGUA VOR-DME
+    3  40.899277778 -117.812191667     4299    10820    25     16.000  INA ENRT K2 WINNEMUCCA VOR/DME
+    3  11.549211111   43.154819444       49    11460    40      2.000  ABI ENRT HD DJIBOUTI TACAN
+    3  32.462833333   13.169508333      489    11510   130      2.000  ABU ENRT HL ABU ARGUB VOR/DME
+    3  -2.724591667  107.753244444      190    11670   125      1.000  TPN ENRT WI TANJUNG PANDAN VOR/DME
     """
     row_code = 3
     lat, rest = payload.lstrip().split(" ", 1)
@@ -113,14 +121,17 @@ def parse_vor(payload):
     elev_ft_above_msl = int(elev_ft_above_msl)
     freq_mhz_x_100, rest = rest.lstrip().split(" ", 1)
     freq_mhz_x_100 = int(freq_mhz_x_100)
-    max_range_nautical_miles, rest = rest.lstrip().split(" ", 1)
-    max_range_nautical_miles = int(max_range_nautical_miles)
+    vor_class, rest = rest.lstrip().split(" ", 1)
+    vor_class = vor_code(int(vor_class))
+    vor_class = vor_class.name if vor_class else None
     slv_var, rest = rest.lstrip().split(" ", 1)
     slv_var = float(slv_var)
     local_id, rest = rest.lstrip().split(" ", 1)
+    enrt, rest = rest.lstrip().split(" ", 1)
+    icao_region_code, rest = rest.lstrip().split(" ", 1)
     name = rest.strip()
 
-    return "VOR", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, max_range_nautical_miles, slv_var, local_id, name
+    return "VOR", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, vor_class, slv_var, local_id, enrt, icao_region_code, name
 
 
 def parse_loc(payload, row_code):
