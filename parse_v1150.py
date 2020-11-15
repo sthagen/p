@@ -253,20 +253,21 @@ def parse_mrk(payload, row_code):
     Associated localiser bearing in true degrees - Up to three decimal places supported
     Not used - Use “----“ to indicate no associated ID
     Airport ICAO code - Up to four characters. Must be valid airport code
+    Airport ICAO region code - Must be region code according to ICAO document No. 7910
     Associated runway number - Up to three characters
     Name - "OM", "MM" or "IM"
     
     Examples:
     ,,,,,,,,,
-    7  39.96071900 -075.75077800    660     0   0     281.662 ---- 40N  29  OM
-    7 -09.37615000  147.17686700    128     0   0     148.638 ---- AYPY 14L OM
-    7  65.87777778 -017.46333333     51     0   0      11.446 ---- BIHU 03  OM
-    7  63.98508333 -022.73211111    171     0   0      89.970 ---- BIKF 11  OM
-    7  64.30544444 -021.97127778     20     0   0     175.260 ---- BIRK 19  OM
-    7  51.08105932 -113.90926177   3557     0   0     298.792 ---- CYYC 28  OM
-    7  36.69396400  003.08995300     82     0   0      91.730 ---- DAAG 09  OM
-    7  36.75166100  003.31432200     82     0   0     232.742 ---- DAAG 23  OM
-
+     7  36.751661111    3.314322222       82        0     0    232.655   AG DAAG DA 23 OM
+     7  36.693888889    3.090000000       82        0     0     91.683   HB DAAG DA 09 OM
+     7  36.223738889    6.686819444     2254        0     0    316.228   CT DABC DA 32 OM
+     8  36.719166667    3.261388889       82        0     0    232.655   AG DAAG DA 23 MM
+     8  36.876638889   10.233972222        0        0     0    192.291  TSI DTTA DT 19 MM
+     8 -26.542777778   31.286666667        0        0     0     53.305  IMS FDMS FD 07 MM
+     9  61.248019444 -149.850219444      192        0     0     80.021 IEDF PAED PA 06 IM
+     9  64.802127778 -147.886813889      430        0     0     38.049 ICNA PAFA PA 02L IM
+     9  61.167966667 -150.047686111      127        0     0     89.913 IANC PANC PA 07R IM
     """
     row_code = row_code
     lat, rest = payload.lstrip().split(" ", 1)
@@ -281,10 +282,11 @@ def parse_mrk(payload, row_code):
     bearing_true_degrees = float(bearing_true_degrees)
     _, rest = rest.lstrip().split(" ", 1)
     airport_icao, rest = rest.lstrip().split(" ", 1)
+    icao_region_code, rest = rest.lstrip().split(" ", 1)
     runway_no, rest = rest.lstrip().split(" ", 1)
     name = rest.strip()
 
-    return "MRK", row_code, lat, lon, elev_ft_above_msl, None, None, bearing_true_degrees, None, airport_icao, runway_no, name
+    return "MRK", row_code, lat, lon, elev_ft_above_msl, None, None, bearing_true_degrees, None, airport_icao, icao_region_code, runway_no, name
 
 
 def parse_dme(payload, row_code):
