@@ -18,6 +18,7 @@ class NDB(IntEnum):
     NORMAL = 50,
     HIGH_POWER = 75,
 
+
 class VOR(IntEnum):
     """VOR class (formerly reception range in nautical miles)
     Note:
@@ -27,6 +28,12 @@ class VOR(IntEnum):
     LOW_ALTITUDE = 40,
     HIGH_ALTITUDE = 130,
     UNSPECIFIED = 125,
+
+
+"""DME service volume (formerly maximum reception range) 
+- 40, 70, 120 or 150, where 150 means 120 or more for D-OSV or 25, 40, 130, 125 like VOR. 
+When provided, use 5.277 D-OSV, otherwise 5.35 class or 5.149 figure of merit, whichever is higher.
+"""
 
 
 def ndb_code(number):
@@ -298,10 +305,11 @@ def parse_dme(payload, row_code):
     Longitude of DME in decimal degrees - Eight decimal places supported
     Elevation in feet above MSL - Integer
     Frequency in MHZ (multiplied by 100) - Integer - MHz multiplied by 100 (eg. 123.45MHz = 12345)
-    Minimum reception range in nautical miles - Integer
-    DME bias in nautical miles. - Default is 0.000
-    Identifier Up to four characters. - Not unique.
-    Airport ICAO code (for DMEs associated with an ILS) - 1) Only used for DMEs associated with an ILS. 2) Up to four characters. Must be valid ICAO code
+    DME service volume (formerly maximum reception range) - 40, 70, 120 or 150, where 150 means 120 or more for D-OSV or 25, 40, 130, 125 like VOR. When provided, use 5.277 D-OSV, otherwise 5.35 class or 5.149 figure of merit, whichever is higher.
+    DME bias in nautical miles. - Default is 0.0 - Up to one decimal place supported
+    Identifier - Up to four characters. Unique within terminal or ICAO region.
+    Airport ICAO code (for DMEs associated with an ILS) ENRT for DMEs associated with VORs, VORTACs, NDBs or standalone DMEs - Up to four characters. Must be valid ICAO code ENRT otherwise
+    ICAO region code of enroute DME or terminal area airport - Must be region code according to ICAO document No. 7910 For terminal DMEs, the region code of the airport is used
     Associated runway number (for DMEs associated with an ILS) - 1) Only used for DMEs associated with an ILS. 2) Up to three characters
     DME name (all DMEs) - 1) "DME-ILS" if associated with ILS 2) Suffix "DME" to navaid name for VOR-DMEs, VORTACs & NDB-DMEs (eg. "SEATTLE VORTAC DME" in example data) 3) For standalone DMEs just use DME name
 
@@ -318,6 +326,13 @@ def parse_dme(payload, row_code):
     12  49.90634415 -099.96163061   1343 11010  18       0.000 IBR  CYBR 08  DME-ILS
     12  45.52196465 -073.40816937     90 11110  18       0.000 IHU  CYHU 24R DME-ILS
 
+    12   9.037802778    7.285102778     1191    11630   130      0.000  ABC ENRT DN ABUJA VOR/DME
+    12  11.549211111   43.154819444       49    11460    40      0.000  ABI ENRT HD DJIBOUTI TACAN DME
+    12  32.462833333   13.169508333      489    11510   130      0.000  ABU ENRT HL ABU ARGUB VOR/DME
+    13  28.601611111  -17.756583333      197    11240   130      0.000   BV ENRT GC LA PALMA DME
+    13  33.521497222   -7.677186111      365    11690   130      0.000  CBA ENRT GM ANFA DME
+    13 -12.349388889   49.295027778      374    11210   130      0.000   DI ENRT FM ANTSIRANANA DME
+
     """
     row_code = row_code
     lat, rest = payload.lstrip().split(" ", 1)
@@ -328,20 +343,16 @@ def parse_dme(payload, row_code):
     elev_ft_above_msl = int(elev_ft_above_msl)
     freq_mhz_x_100, rest = rest.lstrip().split(" ", 1)
     freq_mhz_x_100 = int(freq_mhz_x_100)
-    max_range_nautical_miles, rest = rest.lstrip().split(" ", 1)
-    max_range_nautical_miles = int(max_range_nautical_miles)
+    dme_service_voumne, rest = rest.lstrip().split(" ", 1)
+    dme_service_voumne = int(dme_service_voumne)
     bearing_true_degrees, rest = rest.lstrip().split(" ", 1)
     bearing_true_degrees = float(bearing_true_degrees)
     local_id, rest = rest.lstrip().split(" ", 1)
     airport_icao, rest = rest.lstrip().split(" ", 1)
+    icao_region_code, rest = rest.lstrip().split(" ", 1)
+    name = rest.strip()
 
-    try:
-        runway_no, rest = rest.lstrip().split(" ", 1)
-        name = rest.strip()
-    except ValueError:
-        runway_no = None
-        name = rest.strip()
-    return "DME", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, max_range_nautical_miles, bearing_true_degrees, local_id, airport_icao, runway_no, name
+    return "DME", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, dme_service_voumne, bearing_true_degrees, local_id, airport_icao, icao_region_code, name
 
 
 def has_data(row):
