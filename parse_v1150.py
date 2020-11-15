@@ -143,10 +143,11 @@ def parse_loc(payload, row_code):
     Longitude of localiser in decimal degrees - Eight decimal places supported.
     Elevation in feet above MSL - Integer
     Frequency in MHZ (multiplied by 100) - Integer - MHz multiplied by 100 (eg. 123.45MHz = 12345)
-    Maximum reception range in nautical miles - Integer
-    Localiser bearing in true degrees - Up to three decimal places supported
-    Localiser identifier - Up to four characters. Usually start with “I”. Not unique
+    Maximum reception range in nautical miles - Integer - Terminal range is 25nm by default
+    Localizer bearing in true degrees prefixed by integer magnetic front course times 360 - Up to three decimal places supported. Magnetic Front Course in integer degrees multiplied by 360 and added (e.g. front course of 164 degrees magnetic on localizer true bearing of 180.343 degrees becomes 59,040 + 180.343 = 59,220.343). This allows the true front course to be read accurately by clients unaware of the magnetic part, because fmod(59220.343, 360)==180.343.
+    Localizer identifier - Up to four characters. Usually start with "I". Unique within airport terminal area
     Airport ICAO code - Up to four characters. Must be valid airport code
+    Airport ICAO region code - Must be region code according to ICAO document No. 7910
     Associated runway number - Up to three characters
     Localiser name - Use "ILS-cat-I", "ILS-cat-II", "ILS-cat-III", "LOC", "LDA" or "SDF"
 
@@ -178,10 +179,11 @@ def parse_loc(payload, row_code):
     bearing_true_degrees = float(bearing_true_degrees)
     local_id, rest = rest.lstrip().split(" ", 1)
     airport_icao, rest = rest.lstrip().split(" ", 1)
+    icao_region_code, rest = rest.lstrip().split(" ", 1)
     runway_no, rest = rest.lstrip().split(" ", 1)
     name = rest.strip()
 
-    return "LOC", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, max_range_nautical_miles, bearing_true_degrees, local_id, airport_icao, runway_no, name
+    return "LOC", row_code, lat, lon, elev_ft_above_msl, freq_mhz_x_100, max_range_nautical_miles, bearing_true_degrees, local_id, airport_icao, icao_region_code, runway_no, name
 
 
 def parse_gli(payload):
